@@ -134,3 +134,47 @@ select.sb-stage{cursor:pointer}
 .dept-leadership .contact-topic { background: #F0EDF5; color: #44375C; }
 .dept-leadership .reach-primary { background: #625273; color: #FFFFFF; }
 .dept-leadership .reach-primary:hover { background: #4C3E5C; }
+
+
+/* Keep all wiki sections available on phone-sized screens. */
+@media (max-width: 720px) {
+  .topnav-inner {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-top: 9px;
+    padding-bottom: 8px;
+  }
+  .top-links {
+    display: flex;
+    order: 3;
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+  .top-links .top-link {
+    display: inline-flex;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 9px 11px;
+    font-size: 13px;
+    scroll-snap-align: start;
+  }
+  .top-links::-webkit-scrollbar {
+    display: block;
+    height: 3px;
+  }
+  .top-links::-webkit-scrollbar-thumb {
+    background: #c9c6de;
+    border-radius: 999px;
+  }
+}
