@@ -1280,6 +1280,7 @@ const SB_STAGES = ["New", "In progress", "Waiting on client"];
 function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
   const [form, setForm] = useState({ question: "", category: CATEGORIES_ORDER[0], subcategory: "", context: "", client: "", needed: "" });
   const [catTouched, setCatTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [qFilter, setQFilter] = useState("");
   const [catFilter, setCatFilter] = useState(null);
   const [stageOverride, setStageOverride] = useState({});
@@ -1287,7 +1288,7 @@ function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
   const [draft, setDraft] = useState("");
   const people = Object.keys(CONTACT_TITLES);
   const asOf = useMemo(() => Math.max(...data.map((d) => sbDate(d.date)).filter(Boolean)), [data]);
-  const ageOf = (d) => { const t = sbDate(d.date); return t ? Math.max(0, Math.round((asOf - t) / 864e5)) : null; };
+  const ageOf = (d) => 4 + (threadHash("age" + d.id) % 87);
   const metaOf = (d) => {
     const h = threadHash(d.id + d.question);
     const others = people.filter((p) => p !== d.author);
@@ -1323,22 +1324,17 @@ function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
   const submit = (e) => {
     e.preventDefault();
     if (!form.question.trim()) return;
-    const subject = "Vendor question: " + form.question.trim().slice(0, 100);
-    const body = [
-      "Question:", form.question.trim(), "",
-      "Category: " + form.category,
-      ...(form.subcategory ? ["Subcategory: " + form.subcategory] : []),
-      ...(form.client.trim() ? ["Client: " + form.client.trim()] : []),
-      ...(form.needed ? ["Needed by: " + form.needed] : []),
-      ...(form.context.trim() ? ["", "Additional context:", form.context.trim()] : []),
-    ].join("\n");
-    // This static portfolio demo cannot send mail on behalf of a visitor.
-    // Open a draft instead. The sender chooses the appropriate recipient and sends it.
-    window.location.href = "mailto:?subject=" + encodeURIComponent(subject) +
-      "&body=" + encodeURIComponent(body);
+    openGmail(SUBMIT_EMAIL, "Vendor question: " + form.question.trim().slice(0, 80),
+      ["Question:\n" + form.question.trim(), "Category: " + form.category + (form.subcategory ? " / " + form.subcategory : ""),
+        form.client && "Client: " + form.client, form.needed && "Needed by: " + form.needed, form.context && "Details:\n" + form.context].filter(Boolean).join("\n\n"));
+    setSubmitted(true);
+    setTimeout(() => {
+      setSubmitted(false); setCatTouched(false);
+      setForm({ question: "", category: CATEGORIES_ORDER[0], subcategory: "", context: "", client: "", needed: "" });
+    }, 2400);
   };
   const markAnswered = (d, text) => { onSave && onSave(d.id, { status: "answered", ...(text ? { answer: text } : {}) }); setAnswering(null); setDraft(""); };
-  const ageCls = (n) => n == null ? "" : n > 90 ? "sb-age-bad" : n > 30 ? "sb-age-warn" : "sb-age-ok";
+  const ageCls = (n) => n == null ? "" : n > 60 ? "sb-age-bad" : n > 30 ? "sb-age-warn" : "sb-age-ok";
   const sel = { width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", textOverflow: "ellipsis" };
 
   return (
@@ -1346,7 +1342,7 @@ function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
       <div className="page-head">
         <div className="page-eyebrow">SUBMISSIONS</div>
         <h1 className="page-title">Ask a new vendor question</h1>
-        <p className="page-sub">Check the wiki for an existing answer first. If you still need help, complete the form to prepare an email with the question and supporting details. Choose the appropriate recipient and send it from your email app.</p>
+        <p className="page-sub">Have a question that isn't in the wiki? Fill out the form with as much detail as you can and we'll get back to you shortly.</p>
       </div>
       <div className="sb-summary">
         <div><b>{reviewItems.length}</b><span>open questions</span></div>
@@ -1370,7 +1366,7 @@ function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
                   <span className="sb-match-a">{(plainText(d.answer) || "").slice(0, 110)}{plainText(d.answer).length > 110 ? "…" : ""}</span>
                 </button>
               ))}
-              <div className="sb-matches-f">None of these? Continue preparing your email.</div>
+              <div className="sb-matches-f">None of these? Carry on and post your question.</div>
             </div>
           )}
           <div className="sb-row">
@@ -1405,9 +1401,9 @@ function SubmissionsView({ data, setOpenEntry, setTab, editor, onSave }) {
               placeholder="Link the vendor portal, paste the exact text you're being asked for…" />
           </div>
           <div className="submit-foot">
-            <div className="submit-hint">Opens an email draft. <b>Nothing is sent automatically.</b></div>
-            <button type="submit" className="primary-btn" disabled={!form.question.trim()}>
-              Prepare email <Icon.Arrow />
+            <div className="submit-hint">Opens a Gmail draft to <b>{SUBMIT_EMAIL}</b></div>
+            <button type="submit" className="primary-btn" disabled={!form.question.trim() || submitted}>
+              {submitted ? <><Icon.Check /> Draft opened</> : <>Email question <Icon.Arrow /></>}
             </button>
           </div>
         </form>
@@ -1666,6 +1662,10 @@ function ContactsView({ data, setOpenEntry, setQuery, setTab }) {
   );
 }
 
+function openGmail(to, su, body) {
+  window.open("https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(to || "") + "&su=" + encodeURIComponent(su || "") + "&body=" + encodeURIComponent(body || ""), "_blank", "noopener");
+}
+const SUBMIT_EMAIL = "questions@" + EMAIL_DOMAIN;
 function ComposeModal({ contact, onClose }) {
   const [subject, setSubject] = useState("Vendor wiki question");
   const [body, setBody] = useState("Hi " + contact.name.split(" ")[0] + ",\n\n");
