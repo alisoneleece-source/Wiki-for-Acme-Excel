@@ -385,7 +385,7 @@ function SearchBar({ query, setQuery }) {
 }
 
 // ---- Sidebar ----
-function Sidebar({ data, activeCat, activeSub, setCat, setSub, mobileOpen, onCloseMobile, setTab }) {
+function Sidebar({ data, activeCat, activeSub, setCat, setSub, mobileOpen, onCloseMobile }) {
   const tree = useMemo(() => {
     const t = {};
     for (const cat of CATEGORIES_ORDER) t[cat] = { total: 0, subs: {} };
@@ -469,8 +469,8 @@ function Sidebar({ data, activeCat, activeSub, setCat, setSub, mobileOpen, onClo
       <div className="side-footer">
         <div className="card-mini">
           <div className="mini-title">Can't find it?</div>
-          <div className="mini-body">Can't find the answer? Prepare an email with your question and context using the Submissions form.</div>
-          <button type="button" className="mini-cta" onClick={() => { setTab("submissions"); onCloseMobile(); }}>Prepare email <Icon.Arrow /></button>
+          <div className="mini-body">Post in #vendor-questions and tag @vendor-wiki to add the answer back here.</div>
+          <button className="mini-cta">Open Slack <Icon.Arrow /></button>
         </div>
       </div>
     </aside>
@@ -1614,7 +1614,7 @@ function ContactsView({ data, setOpenEntry, setQuery, setTab }) {
         </div>
       </div>
       {groups.map(([d, list]) => (
-        <section key={d} className={"dept-section" + (d === "Leadership" ? " dept-leadership" : "")}>
+        <section key={d} className="dept-section">
           <h2 className="dept-title"><i className="dept-dot" style={{ background: DEPT_COLORS[d] || "var(--ink-4)" }}></i>{d}<span>{list.length}</span></h2>
           <div className="contacts-grid">
             {list.map((c) => (
@@ -1685,8 +1685,8 @@ function ComposeModal({ contact, onClose }) {
         {sent ? (
           <div className="cm-sent">
             <div className="cm-check">✓</div>
-            <div className="cm-sent-title">Message sent to {contact.name}</div>
-            <div className="cm-sent-sub">{contact.email}</div>
+            <div className="cm-sent-title">Draft opened in Gmail</div>
+            <div className="cm-sent-sub">To {contact.name} · {contact.email}</div>
             <button className="reach-btn reach-primary" onClick={onClose}>Done</button>
           </div>
         ) : (
@@ -1699,7 +1699,7 @@ function ComposeModal({ contact, onClose }) {
             <div className="cm-foot">
               {contact.topics && contact.topics[0] && <span className="cm-hint">Go-to for: {contact.topics.slice(0, 2).join(", ")}</span>}
               <button className="ghost-btn" onClick={onClose}>Cancel</button>
-              <button className="reach-btn reach-primary" disabled={!body.trim()} onClick={() => setSent(true)}>Send</button>
+              <button className="reach-btn reach-primary" disabled={!body.trim()} onClick={() => { openGmail(contact.email, subject, body); setSent(true); }}>Open in Gmail</button>
             </div>
           </>
         )}
@@ -1957,7 +1957,6 @@ function App() {
               setSub={setSub}
               mobileOpen={browseOpen}
               onCloseMobile={() => setBrowseOpen(false)}
-              setTab={setTab}
             />
             <Main
               data={data}
